@@ -25,43 +25,37 @@ The project helps bridge communication between the deaf-mute community and the r
 
 ## Login Page
 
-![Login Page](images/login_page.png)
+![Login Page](images/login_page.jpeg)
 
 ---
 
 ## Home Page
 
-![Home Page](images/home_page.png)
+![Home Page](images/home_page.jpeg)
 
 ---
 
 ## Audio To Gesture & Gesture Recognition
 
-![Main Interface](images/main_interface.png)
+![Main Interface](images/main_interface.jpeg)
 
 ---
 
 ## Recognized Text and Gesture Output
 
-![Gesture Output](images/gesture_output.png)
+![Gesture Output](images/gesture_output.jpeg)
 
 ---
 
 ## Audio Generation Output
 
-![Audio Output](images/audio_output.png)
+![Audio Output](images/audio_output.jpeg)
 
 ---
 
 ## Emergency Communication Module
 
-![Emergency Module](images/emergency_module.png)
-
----
-
-## Real-Time Gesture Prediction
-
-![Realtime Prediction](images/realtime_prediction.png)
+![Emergency Module](images/emergency_module.jpeg)
 
 ---
 
