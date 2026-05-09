@@ -1,0 +1,173 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Gesture Recognition Result</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .result-container {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            text-align: center;
+        }
+        .result-title {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .predicted-word {
+            font-size: 42px;
+            color: #667eea;
+            margin: 20px 0;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+        .audio-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        audio {
+            width: 100%;
+            height: 60px;
+            margin: 15px 0;
+            border-radius: 8px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        .btn-custom {
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        .btn-primary-custom {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary-custom:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-secondary-custom {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-secondary-custom:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+        .error-message {
+            color: #dc3545;
+            font-size: 16px;
+            margin: 15px 0;
+            padding: 10px;
+            background: #f8d7da;
+            border-radius: 5px;
+        }
+        .success-message {
+            color: #155724;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+        .no-audio {
+            color: #ff9800;
+            font-size: 14px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="result-container">
+        <h1 class="result-title">🎉 Gesture Recognition Result</h1>
+        
+        {% if error %}
+            <div class="error-message">
+                ⚠️ {{ error }}
+            </div>
+        {% endif %}
+        
+        <div class="predicted-word">
+            {{ max_word|upper }}
+        </div>
+        
+        {% if audio_url %}
+            <div class="audio-section">
+                <h5 style="color: #333; margin-bottom: 15px;">🔊 Listen to the Result:</h5>
+                <audio id="audioPlayer" controls>
+                    <source src="{{ audio_url }}" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                </audio>
+                <p class="success-message">✓ Audio generated successfully</p>
+            </div>
+        {% else %}
+            <div class="audio-section">
+                <p class="no-audio">⚠️ Audio could not be generated. Please check if gTTS is installed:</p>
+                <code style="background: #f0f0f0; padding: 10px; border-radius: 5px; display: block;">pip install gtts</code>
+            </div>
+        {% endif %}
+        
+        <div class="button-group">
+            <a href="/home/" class="btn btn-custom btn-primary-custom">
+                🏠 Home
+            </a>
+            <a href="/webcam/" class="btn btn-custom btn-primary-custom">
+                📹 Try Again
+            </a>
+            <a href="/gest_keyboard/" class="btn btn-custom btn-secondary-custom">
+                ⌨️ Gesture Keyboard
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Auto-play audio with proper handling
+        document.addEventListener('DOMContentLoaded', function() {
+            const audio = document.getElementById('audioPlayer');
+            
+            if (audio && audio.src) {
+                // Add small delay for browser readiness
+                setTimeout(function() {
+                    audio.muted = false;  // Unmute
+                    const playPromise = audio.play();
+                    
+                    if (playPromise !== undefined) {
+                        playPromise
+                            .then(() => {
+                                console.log('✓ Audio playing');
+                            })
+                            .catch(error => {
+                                console.log('⚠ Audio autoplay prevented by browser:', error);
+                                // User can still click play button
+                            });
+                    }
+                }, 500);
+            }
+        });
+    </script>
+</body>
+</html>

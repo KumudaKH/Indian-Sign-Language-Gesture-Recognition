@@ -1,0 +1,427 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <title>Bare - Start Bootstrap Template</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.0/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+  <!-- Bootstrap core CSS -->
+  <link rel="stylesheet" href="{% static 'aud2gest/css/main_page2.css' %}" >
+
+</head>
+
+<body >
+  <!-- Navigation --> 
+  <nav class="navbar navbar-expand-lg navbar-dark static-top" style="background-color: rgb(109,0,0);">
+        <a href="../index"><img src="/static/aud2gest/images/logo3.png" height="45px" width="45px"></a>
+    <div class="container">
+      <a class="navbar-brand" href="../home">Koe No Katachi</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarResponsive">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="../instruction">Instructions</a>
+          </li>
+          {% if user.is_authenticated %}
+              <li class="nav-item">
+                <a class="nav-link" href="../logout">Logout</a>
+              </li>
+              {% else %}
+              <li class="nav-item">
+                <a class="nav-link" href="../login">Login</a>
+              </li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+  </nav>
+  <div class="row split_pane">
+        <div class="col-sm-6 left" align="center" id="left_side">
+          <h4>Convert Audio To Gestures</h4>
+          <br>
+          <br><br>
+          <h4>Speak to see Gestures</h4>
+          <button type="button" class="btn btn-dark" onclick="startRecognition()" id="speakBtn">🎤 Speak</button>
+          <p id="speech_status" style="margin-top:12px; color:#000; font-weight:600;"></p>
+          <hr>
+          <br>
+          <p>Click the microphone button and speak clearly. The recognized text will display with gesture images.</p>
+        </div>
+        <div class="col-sm-6 right" align="center" id="right_side">
+         	<h4 style="color:#e3e3e3;">Gesture Recognition</h4>
+            <div style="width:100%; max-width:460px; margin: 20px auto; background:#111; border-radius:18px; padding:18px; box-shadow:0 12px 30px rgba(0,0,0,0.25);">
+                <div style="position:relative;">
+                    <video id="webcamVideo" autoplay playsinline muted style="width:100%; border-radius:14px; background:#000; min-height:240px;"></video>
+                    <div id="roiOverlay" style="position:absolute; top:18%; left:18%; width:56%; height:48%; border: 3px dashed #4caf50; box-sizing:border-box; pointer-events:none; border-radius:16px;"></div>
+                </div>
+                <div class="button-group" style="display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-top:16px;">
+                    <button id="startWebcamBtn" type="button" class="btn btn-success" onclick="startWebcam()" style="min-width:130px;">Start Webcam</button>
+                    <button id="stopWebcamBtn" type="button" class="btn btn-danger" onclick="stopWebcam()" disabled style="min-width:130px;">Stop Webcam</button>
+                    <button id="predictWebcamBtn" type="button" class="btn btn-primary" onclick="predictWebcam()" disabled style="min-width:130px;" data-endpoint="/api/predict-webcam/">Predict</button>
+                    <button id="liveWebcamBtn" type="button" class="btn btn-warning" onclick="toggleLivePrediction()" disabled style="min-width:130px;">Live (OFF)</button>
+                    <button id="testEndpointBtn" type="button" class="btn btn-secondary" onclick="testPredictEndpoint()" style="min-width:130px;">Test Endpoint</button>
+                </div>
+                <div id="webcamResult" style="margin-top:18px; padding:16px; background:#181818; border-radius:14px; color:#e0e0e0; min-height:100px;">
+                    <div style="font-size:12px; letter-spacing:1px; color:#8cc34b; margin-bottom:8px;">PREDICTED RESULT</div>
+                    <div id="predictedOutput" style="font-size:24px; font-weight:700; color:#ffffff;">No prediction yet</div>
+                    <div id="confidenceOutput" style="font-size:12px; color:#aaa; margin-top:8px; display:none;">Confidence: <span id="confidenceValue">0%</span></div>
+                </div>
+            </div>
+            <button type="button" class="btn btn-light" onclick="window.location.href='../gest_keyboard'" style="margin-top: 10px; height: 60px; width: 180px">Use Gesture Keyboard</button>
+        </div>
+    </div> 
+
+<!--Loading Modal -->
+<div class="container">
+  <div class="modal fade" id="load_modal" role="dialog">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+         <img src="{% static 'aud2gest/images/load.gif' %}" id="loading">
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Loading modal -->
+
+<!-- Modal -->
+<div class="container">
+  <div class="modal fade" id="myModal" role="dialog">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header" style="background-color: black">
+          <!-- <button type="button" class="close" data-dismiss="modal">&times;</button> -->
+          <h4 class="modal-title" id="heading" style="color:rgb(109,0,0)"></h4>
+        </div>
+        <div class="modal-body">
+          <h2 id="demo" style="color: #000000;"></h2>
+          <div id="gesture_images"></div>
+          <img id="image_output" style="display:none; max-width:100%; height:auto;" />
+        </div>
+        <div class="modal-footer" style="background-color: black">
+          <button type="button" class="btn btn-default" data-dismiss="modal" style="background-color: white" ><p style="color: rgb(109,0,0)">Close</p></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- End of modal -->
+
+<script type="text/javascript">
+let recognition = null;
+
+function updateStatus(message) {
+    const status = document.getElementById('speech_status');
+    status.innerText = message || '';
+}
+
+function resetRecognitionUI(message) {
+    document.getElementById('speakBtn').disabled = false;
+    updateStatus(message || 'Press Speak and say something clearly.');
+}
+
+function createRecognition() {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert('Speech recognition is not supported in this browser. Please use Chrome.');
+        return null;
+    }
+
+    const recog = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    recog.lang = 'en-US';
+    recog.interimResults = false;
+    recog.maxAlternatives = 1;
+    recog.continuous = false;
+
+    recog.onstart = function() {
+        console.log('Speech recognition started');
+        updateStatus('Listening... please speak now.');
+        document.getElementById('speakBtn').disabled = true;
+    };
+
+    recog.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById('demo').innerHTML = transcript;
+        document.getElementById('heading').innerHTML = 'Recognized Text and Gestures';
+        displayGestures(transcript);
+        $('#myModal').modal('show');
+        resetRecognitionUI('Recognition complete.');
+    };
+
+    recog.onnomatch = function() {
+        console.warn('Speech not recognized');
+        updateStatus('No speech detected. Please try again.');
+        resetRecognitionUI();
+    };
+
+    recog.onerror = function(event) {
+        console.error('Speech recognition error:', event.error);
+        if (event.error === 'no-speech' || event.error === 'aborted') {
+            updateStatus('No speech detected or recognition aborted. Please try again.');
+        } else if (event.error === 'not-allowed' || event.error === 'permission-denied') {
+            updateStatus('Microphone permission denied. Allow access and try again.');
+        } else {
+            updateStatus('Speech recognition failed: ' + event.error);
+        }
+        resetRecognitionUI();
+    };
+
+    recog.onspeechend = function() {
+        console.log('Speech ended, stopping recognition');
+        recog.stop();
+    };
+
+    recog.onend = function() {
+        console.log('Speech recognition ended');
+        if (!document.getElementById('speakBtn').disabled) {
+            updateStatus('Press Speak to try again.');
+        }
+    };
+
+    return recog;
+}
+
+function startRecognition() {
+    if (!recognition) {
+        recognition = createRecognition();
+        if (!recognition) return;
+    }
+    try {
+        updateStatus('Starting speech recognition...');
+        recognition.start();
+    } catch (error) {
+        console.error('Recognition start error:', error);
+        updateStatus('Could not start recognition. Please try again.');
+        resetRecognitionUI();
+    }
+}
+
+function displayGestures(text) {
+    const gestureDiv = document.getElementById('gesture_images');
+    gestureDiv.innerHTML = ''; // Clear previous images
+
+    for (let char of text.toUpperCase()) {
+        if (char >= 'A' && char <= 'Z') {
+            const img = document.createElement('img');
+            img.src = `/media/Alphabets/${char}.jpg`;
+            img.alt = `Gesture for ${char}`;
+            img.style.width = '100px';
+            img.style.height = '100px';
+            img.style.margin = '5px';
+            gestureDiv.appendChild(img);
+        }
+    }
+}
+</script>
+
+<script type="text/javascript">
+  function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+          const cookies = document.cookie.split(';');
+          for (let i = 0; i < cookies.length; i++) {
+              const cookie = cookies[i].trim();
+              if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                  cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                  break;
+              }
+          }
+      }
+      return cookieValue;
+  }
+
+  let webcamStream = null;
+  const videoElement = document.getElementById('webcamVideo');
+    let currentMode = 'webcam_gesture';
+  let liveEnabled = false;
+  let liveIntervalId = null;
+
+  async function startWebcam() {
+      try {
+          webcamStream = await navigator.mediaDevices.getUserMedia({ video: true });
+          videoElement.srcObject = webcamStream;
+          document.getElementById('startWebcamBtn').disabled = true;
+          document.getElementById('stopWebcamBtn').disabled = false;
+          document.getElementById('predictWebcamBtn').disabled = false;
+          document.getElementById('liveWebcamBtn').disabled = false;
+          document.getElementById('predictedOutput').innerText = 'Webcam running...';
+      } catch (error) {
+          console.error('Webcam start error:', error);
+          alert('Unable to start webcam. Please allow camera access and try again.');
+      }
+  }
+
+  function stopWebcam() {
+      if (webcamStream) {
+          webcamStream.getTracks().forEach(track => track.stop());
+          webcamStream = null;
+      }
+      
+      // Stop live prediction if running
+      if (liveEnabled) {
+          toggleLivePrediction();
+      }
+      
+      videoElement.srcObject = null;
+      document.getElementById('startWebcamBtn').disabled = false;
+      document.getElementById('stopWebcamBtn').disabled = true;
+      document.getElementById('predictWebcamBtn').disabled = true;
+      document.getElementById('liveWebcamBtn').disabled = true;
+      document.getElementById('predictedOutput').innerText = 'No prediction yet';
+      document.getElementById('confidenceOutput').style.display = 'none';
+  }
+
+  function toggleLivePrediction() {
+      if (liveEnabled) {
+          liveEnabled = false;
+          if (liveIntervalId) {
+              clearInterval(liveIntervalId);
+              liveIntervalId = null;
+          }
+          document.getElementById('liveWebcamBtn').innerText = 'Live (OFF)';
+          document.getElementById('liveWebcamBtn').classList.remove('active');
+      } else {
+          liveEnabled = true;
+          document.getElementById('liveWebcamBtn').innerText = 'Live (ON)';
+          document.getElementById('liveWebcamBtn').classList.add('active');
+          // Predict every 500ms
+          liveIntervalId = setInterval(predictWebcam, 500);
+      }
+  }
+
+  async function captureFrame() {
+      if (!webcamStream) {
+          alert('Start the webcam first to capture a frame.');
+          return null;
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = videoElement.videoWidth;
+      canvas.height = videoElement.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+    // Extract ROI (Region of Interest) - hand area
+    // For both gesture and ISL phrases mode
+    const roiX = Math.round(canvas.width * 0.35);
+    const roiY = Math.round(canvas.height * 0.30);
+    const roiW = Math.round(canvas.width * 0.30);
+    const roiH = Math.round(canvas.height * 0.40);
+
+      const roiCanvas = document.createElement('canvas');
+      roiCanvas.width = roiW;
+      roiCanvas.height = roiH;
+      const roiCtx = roiCanvas.getContext('2d');
+      roiCtx.drawImage(canvas, roiX, roiY, roiW, roiH, 0, 0, roiW, roiH);
+      
+      return roiCanvas.toDataURL('image/jpeg', 0.8);
+  }
+
+  async function predictWebcam() {
+      if (!webcamStream) {
+          if (!liveEnabled) {
+              alert('Start the webcam first to capture a frame.');
+          }
+          return;
+      }
+
+      try {
+          const dataUrl = await captureFrame();
+          if (!dataUrl) return;
+          
+          if (!liveEnabled) {
+              document.getElementById('predictedOutput').innerText = 'Predicting...';
+          }
+
+          const endpoint = currentMode === 'isl_phrases' 
+              ? '/api/predict-webcam/?mode=isl_phrases' 
+              : '/api/predict-webcam/?mode=webcam_gesture';
+
+          const response = await fetch(endpoint, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'X-CSRFToken': getCookie('csrftoken')
+              },
+              body: JSON.stringify({ image: dataUrl })
+          });
+
+          let result = {};
+          try {
+              result = await response.json();
+          } catch (jsonError) {
+              console.error('JSON parse error:', jsonError);
+          }
+
+          console.log('Response status:', response.status);
+          console.log('Response result:', result);
+
+          if (response.ok && result.prediction) {
+              const displayText = currentMode === 'isl_phrases' 
+                  ? result.prediction.toUpperCase() 
+                  : result.prediction.toUpperCase();
+              
+              document.getElementById('predictedOutput').innerText = displayText;
+              
+              // Show confidence if available
+              if (result.confidence !== undefined) {
+                  document.getElementById('confidenceOutput').style.display = 'block';
+                  document.getElementById('confidenceValue').innerText = 
+                      (result.confidence * 100).toFixed(1) + '%';
+              } else {
+                  document.getElementById('confidenceOutput').style.display = 'none';
+              }
+          } else {
+              let message = result.error || `Prediction failed (${response.status})`;
+              if (result.detail) {
+                  message += ' - ' + result.detail;
+              }
+              console.error('Prediction error message:', message);
+              document.getElementById('predictedOutput').innerText = message;
+              document.getElementById('confidenceOutput').style.display = 'none';
+          }
+      } catch (error) {
+          console.error('Prediction error:', error);
+          if (!liveEnabled) {
+              document.getElementById('predictedOutput').innerText = 'Prediction failed';
+          }
+      }
+  }
+
+  // Quick test helper to hit the predict endpoint without webcam
+  async function testPredictEndpoint() {
+      const predictBtn = document.getElementById('predictWebcamBtn');
+      const configured = predictBtn && predictBtn.getAttribute('data-endpoint');
+      const endpointBase = configured || '/api/predict-webcam/';
+      // send a lightweight test payload
+      const testPayload = { test: true };
+      try {
+          document.getElementById('predictedOutput').innerText = 'Testing endpoint...';
+          const resp = await fetch(endpointBase, {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'X-CSRFToken': getCookie('csrftoken')
+              },
+              body: JSON.stringify(testPayload)
+          });
+          let body = null;
+          try { body = await resp.json(); } catch(e) { body = { statusText: resp.statusText }; }
+          document.getElementById('predictedOutput').innerText = `Test ${resp.status}: ${JSON.stringify(body)}`;
+      } catch (err) {
+          console.error('Test endpoint error:', err);
+          document.getElementById('predictedOutput').innerText = 'Test failed: ' + err.message;
+      }
+  }
+</script>
+</body>
+</html>
